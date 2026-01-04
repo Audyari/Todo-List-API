@@ -1,0 +1,16 @@
+backend :
+
+1. cargo check
+2. rustup toolchain install stable-x86_64-pc-windows-gnu
+3. rustup default stable-x86_64-pc-windows-gnu
+4. cargo check --target x86_64-pc-windows-gnu
+5. cargo run
+6. winget install -e --id GnuWin32.Make
+7. winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+8. rustup default stable-x86_64-pc-windows-msvc
+
+
+frontend nya :
+
+1. npm run dev
+2. npm run build
