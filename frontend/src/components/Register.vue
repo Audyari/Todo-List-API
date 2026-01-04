@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const formData = ref({
   fullName: '',
@@ -9,10 +12,22 @@ const formData = ref({
 
 const showPassword = ref(false)
 
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault()
   console.log('Registration data:', formData.value)
-  // Add your registration logic here
+
+  // In a real application, you would make an API call to register the user
+  // For now, we'll simulate a successful registration
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // On successful registration, redirect to login
+    router.push('/login')
+  } catch (error) {
+    console.error('Registration failed:', error)
+    // Handle registration error (show message to user, etc.)
+  }
 }
 </script>
 
@@ -122,7 +137,7 @@ const handleSubmit = (e) => {
 
     <!-- Footer -->
     <footer class="py-6 text-center text-sm text-gray-600 dark:text-gray-400">
-      <p>© 2024 ToDo App. All rights reserved.</p>
+      <p>© 2026 ToDo App. All rights reserved.</p>
     </footer>
   </div>
 </template>

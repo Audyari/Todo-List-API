@@ -81,27 +81,42 @@
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'Login',
   setup() {
+    const router = useRouter()
+
     const loginData = ref({
       email: '',
       password: ''
     })
-    
+
     const showPassword = ref(false)
-    
+
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
     }
-    
-    const handleLogin = (e) => {
+
+    const handleLogin = async (e) => {
       e.preventDefault()
       console.log('Login data:', loginData.value)
-      // Add your login logic here
+
+      // In a real application, you would make an API call to authenticate the user
+      // For now, we'll simulate a successful login
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // On successful login, redirect to dashboard
+        router.push('/dashboard')
+      } catch (error) {
+        console.error('Login failed:', error)
+        // Handle login error (show message to user, etc.)
+      }
     }
-    
+
     return {
       loginData,
       showPassword,
