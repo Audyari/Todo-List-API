@@ -51,6 +51,7 @@ export default {
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
+  font-feature-settings: 'liga';
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
