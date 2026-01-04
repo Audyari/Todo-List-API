@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Task Modal</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
+<!-- Modal Overlay Backdrop -->
+<div aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-40"></div>
+<!-- Modal Container -->
+<div class="relative z-50 w-full max-w-[600px] transform overflow-hidden rounded-xl bg-white dark:bg-[#1a2632] shadow-2xl transition-all border border-[#dbe0e6] dark:border-gray-700">
+<!-- Header Section -->
+<div class="flex items-center justify-between px-6 pt-6 pb-2">
+<div class="flex flex-col">
+<h2 class="text-[#111418] dark:text-white tracking-tight text-[28px] font-bold leading-tight text-left">
+                    Edit Task
+                </h2>
+<p class="text-[#617589] dark:text-gray-400 text-sm font-normal leading-normal pt-1">
+                    Editing item: <span class="font-medium text-primary">#Task-1024</span>
+</p>
+</div>
+<!-- Close Icon Button -->
+<button class="text-[#617589] dark:text-gray-400 hover:text-[#111418] dark:hover:text-white transition-colors cursor-pointer p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Divider -->
+<div class="h-px bg-[#dbe0e6] dark:bg-gray-700 mx-6 my-2"></div>
+<!-- Form Content -->
+<div class="px-6 py-4 flex flex-col gap-5">
+<!-- Title Field -->
+<label class="flex flex-col w-full group">
+<p class="text-[#111418] dark:text-gray-100 text-base font-medium leading-normal pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-gray-400">title</span>
+                    Task Title
+                </p>
+<input autofocus="" class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white dark:bg-[#23303d] focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-gray-600 bg-white focus:border-primary h-12 placeholder:text-[#617589] px-[15px] text-base font-normal leading-normal transition-shadow" type="text" value="Buy Groceries"/>
+</label>
+<!-- Description Field -->
+<label class="flex flex-col w-full group">
+<p class="text-[#111418] dark:text-gray-100 text-base font-medium leading-normal pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-gray-400">description</span>
+                    Description
+                </p>
+<textarea class="form-textarea flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white dark:bg-[#23303d] focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-gray-600 bg-white focus:border-primary min-h-[160px] placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal transition-shadow">Milk, Bread, Eggs, and Coffee beans. Need to check if we have enough olive oil left.</textarea>
+</label>
+<!-- Additional Meta Options (Optional but helpful) -->
+<div class="flex gap-4">
+<label class="flex flex-col w-1/2">
+<p class="text-[#111418] dark:text-gray-100 text-sm font-medium leading-normal pb-2">Due Date</p>
+<div class="relative">
+<input class="w-full rounded-lg border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-[#23303d] text-[#111418] dark:text-white h-10 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary" type="date" value="2023-10-25"/>
+</div>
+</label>
+<label class="flex flex-col w-1/2">
+<p class="text-[#111418] dark:text-gray-100 text-sm font-medium leading-normal pb-2">Priority</p>
+<select class="w-full rounded-lg border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-[#23303d] text-[#111418] dark:text-white h-10 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary">
+<option>Low</option>
+<option selected="">Medium</option>
+<option>High</option>
+</select>
+</label>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="bg-gray-50 dark:bg-[#151f28] px-6 py-4 flex items-center justify-between rounded-b-xl border-t border-[#dbe0e6] dark:border-gray-700">
+<!-- Delete Action (Secondary/Destructive) -->
+<button class="flex items-center justify-center gap-2 text-red-500 hover:text-red-700 text-sm font-medium px-2 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span class="hidden sm:inline">Delete Task</span>
+</button>
+<!-- Primary Actions -->
+<div class="flex gap-3">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-white dark:bg-transparent border border-[#dbe0e6] dark:border-gray-600 text-[#111418] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-bold leading-normal tracking-[0.015em] transition-colors shadow-sm">
+<span class="truncate">Cancel</span>
+</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal tracking-[0.015em] transition-colors shadow-sm">
+<span class="truncate">Save Changes</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>
