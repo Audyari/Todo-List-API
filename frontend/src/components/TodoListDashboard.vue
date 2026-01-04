@@ -180,10 +180,10 @@
                   <span>{{ formatDate(task.dueDate) }}</span>
                 </div>
                 <div class="flex items-center justify-end gap-1 w-20 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button class="p-1.5 text-[#617589] hover:text-primary rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-slate-400 transition-colors" title="Edit">
+                  <button class="p-1.5 text-[#617589] hover:text-primary rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-slate-400 transition-colors" title="Edit" @click="openEditModal(task)">
                     <span class="material-symbols-outlined text-[20px]">edit</span>
                   </button>
-                  <button class="p-1.5 text-[#617589] hover:text-red-500 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-slate-400 transition-colors" title="Delete">
+                  <button class="p-1.5 text-[#617589] hover:text-red-500 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-slate-400 transition-colors" title="Delete" @click="deleteTask(task.id)">
                     <span class="material-symbols-outlined text-[20px]">delete</span>
                   </button>
                 </div>
@@ -217,20 +217,33 @@
       @close="showCreateModal = false"
       @save="addTask"
     />
+
+    <!-- Edit Todo Modal -->
+    <EditTodoList
+      v-if="showEditModal && selectedTask"
+      :task="selectedTask"
+      @close="showEditModal = false"
+      @save="updateTask"
+      @delete="handleDeleteTask"
+    />
   </div>
 </template>
 
 <script>
 import CreateTodoList from './CreateTodoList.vue'
+import EditTodoList from './EditTodoList.vue'
 
 export default {
   name: 'TodoListDashboard',
   components: {
-    CreateTodoList
+    CreateTodoList,
+    EditTodoList
   },
   data() {
     return {
       showCreateModal: false,
+      showEditModal: false,
+      selectedTask: null,
       tasks: [
         {
           id: 1,
@@ -322,6 +335,26 @@ export default {
 
       this.tasks.push(newTask);
       this.showCreateModal = false;
+    },
+    openEditModal(task) {
+      this.selectedTask = { ...task }; // Create a copy to avoid direct mutation
+      this.showEditModal = true;
+    },
+    updateTask(updatedTask) {
+      const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+      if (index !== -1) {
+        this.tasks[index] = { ...updatedTask };
+      }
+      this.showEditModal = false;
+      this.selectedTask = null;
+    },
+    deleteTask(taskId) {
+      this.tasks = this.tasks.filter(task => task.id !== taskId);
+    },
+    handleDeleteTask(taskId) {
+      this.deleteTask(taskId);
+      this.showEditModal = false;
+      this.selectedTask = null;
     },
     getStatusFromPriority(priority) {
       const statusMap = {
