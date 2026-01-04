@@ -9,12 +9,12 @@
         </div>
         <h2 class="text-xl font-bold tracking-tight text-[#111418] dark:text-white">TaskMaster</h2>
       </div>
-      
+
       <!-- User Profile -->
       <div class="px-4 pb-6 border-b border-[#f0f2f4] dark:border-slate-800 mx-2">
         <div class="flex items-center gap-3 p-3 rounded-xl bg-background-light dark:bg-background-dark">
-          <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shrink-0" 
-               data-alt="User profile picture of a smiling man" 
+          <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shrink-0"
+               data-alt="User profile picture of a smiling man"
                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB49siYi_nu1zy2fvwwZL0sZ6Q3w99p0DYMKGgEcW7_NnYZHjNIAJB515o8ZovvacXNL19GO3Bh-h_hxgMpgkXX55txbTfV_97PAR_-UKOobYofellkaFwoeXC9DAWVFa6erOiov3DVr8Y_WV5CZw8eV6kxPfdik_CKkCPu-sQilIcVrq_P_kjhPqtN25akGw5p0zGOGBL9J9_6a19lKf-NHqxgVcqbP1mD5K75uGJlING6Y0rxKxXreN6QADuQ5AqlRQ8n7nV6aA");'></div>
           <div class="flex flex-col min-w-0">
             <h1 class="text-sm font-bold truncate dark:text-white">John Doe</h1>
@@ -22,13 +22,13 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Navigation Links -->
       <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2">
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary dark:bg-primary/20" href="#">
           <span class="material-symbols-outlined fill-1">check_circle</span>
           <span class="text-sm font-medium">My Tasks</span>
-          <span class="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+          <span class="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ tasks.filter(t => !t.completed).length }}</span>
         </a>
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#617589] dark:text-slate-300 hover:bg-[#f0f2f4] dark:hover:bg-slate-700 transition-colors" href="#">
           <span class="material-symbols-outlined">star</span>
@@ -54,7 +54,7 @@
           <span class="text-sm font-medium">Q4 Marketing</span>
         </a>
       </nav>
-      
+
       <!-- Bottom Action -->
       <div class="p-4 border-t border-[#f0f2f4] dark:border-slate-800">
         <button class="flex w-full items-center justify-center gap-2 rounded-lg h-10 px-4 bg-background-light dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-[#111418] dark:text-white text-sm font-bold transition-colors">
@@ -63,7 +63,7 @@
         </button>
       </div>
     </aside>
-    
+
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
       <!-- Top Header (Search & Actions) -->
@@ -84,13 +84,15 @@
             <span class="material-symbols-outlined text-[24px]">notifications</span>
             <span class="absolute top-2 right-2 size-2.5 bg-red-500 border-2 border-white dark:border-[#1a2632] rounded-full"></span>
           </button>
-          <button class="hidden sm:flex h-10 items-center justify-center rounded-lg bg-primary hover:bg-blue-600 text-white px-4 text-sm font-bold gap-2 shadow-md hover:shadow-lg transition-all">
+          <button
+            @click="showCreateModal = true"
+            class="hidden sm:flex h-10 items-center justify-center rounded-lg bg-primary hover:bg-blue-600 text-white px-4 text-sm font-bold gap-2 shadow-md hover:shadow-lg transition-all">
             <span class="material-symbols-outlined text-[20px]">add</span>
             <span>New Task</span>
           </button>
         </div>
       </header>
-      
+
       <!-- Scrollable Content -->
       <div class="flex-1 overflow-y-auto p-4 md:p-8">
         <div class="max-w-5xl mx-auto flex flex-col gap-6">
@@ -101,11 +103,13 @@
               <p class="text-[#617589] dark:text-slate-400">Keep track of your daily priorities and manage your workflow.</p>
             </div>
             <!-- FAB for Mobile -->
-            <button class="md:hidden fixed bottom-6 right-6 size-14 rounded-full bg-primary text-white shadow-xl flex items-center justify-center z-50">
+            <button
+              @click="showCreateModal = true"
+              class="md:hidden fixed bottom-6 right-6 size-14 rounded-full bg-primary text-white shadow-xl flex items-center justify-center z-50">
               <span class="material-symbols-outlined text-[28px]">add</span>
             </button>
           </div>
-          
+
           <!-- Filters and Toolbar -->
           <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white dark:bg-[#1a2632] p-2 rounded-xl shadow-sm border border-[#f0f2f4] dark:border-slate-800">
             <!-- Chips -->
@@ -132,7 +136,7 @@
               </button>
             </div>
           </div>
-          
+
           <!-- Task List Container -->
           <div class="flex flex-col bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-[#f0f2f4] dark:border-slate-800 overflow-hidden">
             <!-- Header Row (Desktop) -->
@@ -143,7 +147,7 @@
               <div class="w-32 text-xs font-bold text-[#617589] dark:text-slate-400 uppercase tracking-wider">Due Date</div>
               <div class="w-20 text-xs font-bold text-[#617589] dark:text-slate-400 uppercase tracking-wider text-right">Actions</div>
             </div>
-            
+
             <!-- Task Items -->
             <div v-for="(task, index) in tasks" :key="task.id" :class="[
               'group flex flex-col md:flex-row md:items-center gap-4 p-4 md:px-6 md:py-4 border-b border-[#f0f2f4] dark:border-slate-800 hover:bg-[#f8f9fa] dark:hover:bg-slate-800/30 transition-colors',
@@ -151,9 +155,9 @@
             ]">
               <div class="flex items-start gap-4 flex-1">
                 <div class="pt-1 md:pt-0">
-                  <input 
-                    v-model="task.completed" 
-                    class="size-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" 
+                  <input
+                    v-model="task.completed"
+                    class="size-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                     type="checkbox"
                   />
                 </div>
@@ -185,10 +189,10 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Pagination -->
             <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4">
-              <p class="text-sm text-[#617589] dark:text-slate-400">Showing <span class="font-bold text-[#111418] dark:text-white">1-5</span> of <span class="font-bold text-[#111418] dark:text-white">{{ tasks.length }}</span> tasks</p>
+              <p class="text-sm text-[#617589] dark:text-slate-400">Showing <span class="font-bold text-[#111418] dark:text-white">1-{{ tasks.length }}</span> of <span class="font-bold text-[#111418] dark:text-white">{{ tasks.length }}</span> tasks</p>
               <div class="flex items-center gap-2">
                 <button class="flex items-center justify-center size-9 rounded-lg border border-[#f0f2f4] dark:border-slate-700 text-[#617589] hover:bg-[#f0f2f4] dark:hover:bg-slate-700 disabled:opacity-50 transition-colors">
                   <span class="material-symbols-outlined text-[20px]">chevron_left</span>
@@ -206,14 +210,27 @@
         </div>
       </div>
     </main>
+
+    <!-- Create Todo Modal -->
+    <CreateTodoList
+      v-if="showCreateModal"
+      @close="showCreateModal = false"
+      @save="addTask"
+    />
   </div>
 </template>
 
 <script>
+import CreateTodoList from './CreateTodoList.vue'
+
 export default {
   name: 'TodoListDashboard',
+  components: {
+    CreateTodoList
+  },
   data() {
     return {
+      showCreateModal: false,
       tasks: [
         {
           id: 1,
@@ -262,23 +279,23 @@ export default {
     getStatusClass(status, variant) {
       const baseClasses = variant === 'desktop' ? 'hidden md:block w-32' : 'md:hidden px-2 py-0.5 rounded text-xs font-medium';
       const statusClasses = {
-        'In Progress': variant === 'desktop' 
-          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+        'In Progress': variant === 'desktop'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-        'Pending': variant === 'desktop' 
-          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' 
+        'Pending': variant === 'desktop'
+          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-        'Completed': variant === 'desktop' 
-          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+        'Completed': variant === 'desktop'
+          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
           : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-        'Idea': variant === 'desktop' 
-          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+        'Idea': variant === 'desktop'
+          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
           : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-        'Routine': variant === 'desktop' 
-          ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' 
+        'Routine': variant === 'desktop'
+          ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
           : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
       };
-      
+
       return `${baseClasses} ${statusClasses[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`;
     },
     formatDate(date) {
@@ -292,6 +309,28 @@ export default {
       return date.getDate() === today.getDate() &&
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear();
+    },
+    addTask(taskData) {
+      const newTask = {
+        id: this.tasks.length + 1,
+        title: taskData.title,
+        description: taskData.description,
+        status: this.getStatusFromPriority(taskData.priority),
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : new Date(),
+        completed: false
+      };
+
+      this.tasks.push(newTask);
+      this.showCreateModal = false;
+    },
+    getStatusFromPriority(priority) {
+      const statusMap = {
+        'high': 'High Priority',
+        'normal': 'In Progress',
+        'low': 'Pending'
+      };
+
+      return statusMap[priority] || 'In Progress';
     }
   }
 }
