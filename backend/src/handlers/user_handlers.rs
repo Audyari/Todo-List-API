@@ -1,5 +1,5 @@
-use crate::models::todo::{CreateTodoRequest, UpdateTodoRequest};
-use crate::services::{todo_service, TodoMongoService};
+use crate::models::user::{CreateUserRequest, UpdateUserRequest};
+use crate::services::UserService;
 use crate::AppState;
 use axum::{
     extract::{Json, Path, State},
@@ -9,27 +9,27 @@ use axum::{
 use bson::oid::ObjectId;
 use serde_json::json;
 
-// Get all todos
-pub async fn get_todos(
+// Get all users
+pub async fn get_users(
     State(state): State<std::sync::Arc<AppState>>,
 ) -> AxumJson<serde_json::Value> {
-    let todo_service = TodoMongoService::new(&state.db.database);
+    let user_service = UserService::new(&state.db.database);
 
-    match todo_service.get_all_todos().await {
-        Ok(todos) => AxumJson(json!({
+    match user_service.get_all_users().await {
+        Ok(users) => AxumJson(json!({
             "success": true,
-            "data": &todos,
-            "count": todos.len()
+            "data": &users,
+            "count": users.len()
         })),
         Err(_) => AxumJson(json!({
             "success": false,
-            "message": "Failed to retrieve todos"
+            "message": "Failed to retrieve users"
         }))
     }
 }
 
-// Get a single todo by ID
-pub async fn get_todo_by_id(
+// Get a single user by ID
+pub async fn get_user_by_id(
     Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
@@ -39,72 +39,62 @@ pub async fn get_todo_by_id(
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
-    let todo_service = TodoMongoService::new(&state.db.database);
+    let user_service = UserService::new(&state.db.database);
 
-    match todo_service.get_todo_by_id(id).await {
-        Ok(Some(todo)) => Ok(AxumJson(json!({
+    match user_service.get_user_by_id(id).await {
+        Ok(Some(user)) => Ok(AxumJson(json!({
             "success": true,
-            "data": todo
+            "data": user
         }))),
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 
-// fungsi membuat todo baru
-pub async fn create_todo(
+// Create a new user
+pub async fn create_user(
     State(state): State<std::sync::Arc<AppState>>,
-    Json(payload): Json<CreateTodoRequest>,
+    Json(payload): Json<CreateUserRequest>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
-    // Validate the request
-    if let Err(_validation_error) = todo_service::validate_todo_request(&payload) {
-        return Err(StatusCode::BAD_REQUEST);
-    }
+    let user_service = UserService::new(&state.db.database);
 
-    let todo_service = TodoMongoService::new(&state.db.database);
-
-    match todo_service.create_todo(payload).await {
-        Ok(new_todo) => Ok(AxumJson(json!({
+    match user_service.create_user(payload).await {
+        Ok(new_user) => Ok(AxumJson(json!({
             "success": true,
-            "data": new_todo,
-            "message": "Todo created successfully"
+            "data": new_user,
+            "message": "User created successfully"
         }))),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 
-// fungsi update todo
-pub async fn update_todo(
+// Update a user
+pub async fn update_user(
     Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
-    Json(payload): Json<UpdateTodoRequest>,
+    Json(payload): Json<UpdateUserRequest>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
-    // Validate the request if there are fields to update
-    if let Err(_validation_error) = todo_service::validate_update_request(&payload) {
-        return Err(StatusCode::BAD_REQUEST);
-    }
-
     // Convert string ID to ObjectId
     let id = match ObjectId::parse_str(&id_str) {
         Ok(oid) => oid,
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
-    let todo_service = TodoMongoService::new(&state.db.database);
+    let user_service = UserService::new(&state.db.database);
 
-    match todo_service.update_todo(id, payload).await {
-        Ok(Some(updated_todo)) => Ok(AxumJson(json!({
+    match user_service.update_user(id, payload).await {
+        Ok(Some(updated_user)) => Ok(AxumJson(json!({
             "success": true,
-            "data": updated_todo,
-            "message": "Todo updated successfully"
+            "data": updated_user,
+            "message": "User updated successfully"
         }))),
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 
-// fungsi delete todo
-pub async fn delete_todo(
+// Delete a user
+pub async fn delete_user(
     Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
@@ -114,12 +104,12 @@ pub async fn delete_todo(
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
-    let todo_service = TodoMongoService::new(&state.db.database);
+    let user_service = UserService::new(&state.db.database);
 
-    match todo_service.delete_todo(id).await {
+    match user_service.delete_user(id).await {
         Ok(true) => Ok(AxumJson(json!({
             "success": true,
-            "message": "Todo deleted successfully"
+            "message": "User deleted successfully"
         }))),
         Ok(false) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),

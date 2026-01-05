@@ -1,67 +1,73 @@
-# Rust Backend - Todo List API
+# Todo List API with MongoDB
 
-RESTful API Hello World basic dengan Rust menggunakan Axum framework.
+This is a Rust-based Todo List API using Axum framework and MongoDB as the database.
 
-## Tech Stack
+## Prerequisites
 
-- **Framework**: Axum (Rust web framework)
-- **Runtime**: Tokio
-- **Serialization**: Serde
-- **Database**: TBD
+- Docker
+- Docker Compose
 
-## Endpoints
+## Running the Application
 
-### Hello World
+### Using Docker Compose (Recommended)
 
-```
-GET /
-```
+1. Make sure you're in the backend directory:
+   ```bash
+   cd backend
+   ```
 
-Returns a hello world message with timestamp.
+2. Start the application and MongoDB:
+   ```bash
+   docker-compose up -d
+   ```
 
-### Health Check
+3. The application will be available at: `http://localhost:3000`
+4. MongoDB will be available at: `mongodb://admin:password@localhost:27017`
 
-```
-GET /health
-```
+### Building and Running Manually
 
-Returns service health status.
+1. Build the application:
+   ```bash
+   docker build -t todo-backend .
+   ```
 
-## Installation & Running
+2. Run MongoDB separately:
+   ```bash
+   docker run -d -p 27017:27017 --name todo-mongodb -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password -v mongodb_data:/data/db mongo:7.0
+   ```
 
-1. Install Rust (if not already installed):
+3. Run the application:
+   ```bash
+   docker run -p 3000:3000 --name todo-backend --link todo-mongodb -e MONGODB_URI=mongodb://admin:password@todo-mongodb:27017/todo_db?authSource=admin todo-backend
+   ```
 
+## API Endpoints
+
+- `GET /` - Hello World endpoint
+- `GET /health` - Health check endpoint
+- `GET /api/todos` - Get all todos
+- `POST /api/todos` - Create a new todo
+- `GET /api/todos/{id}` - Get a specific todo by ID
+- `PUT /api/todos/{id}` - Update a specific todo
+- `DELETE /api/todos/{id}` - Delete a specific todo
+
+## Environment Variables
+
+- `MONGODB_URI` - MongoDB connection string
+- `DATABASE_NAME` - Name of the database to use
+
+## Stopping the Application
+
+To stop the application:
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+docker-compose down
 ```
 
-2. Run the server:
-
+To stop and remove volumes (this will delete all data):
 ```bash
-cd backend
-cargo run
-```
-
-3. Test the API:
-
-```bash
-curl http://localhost:3000/
-curl http://localhost:3000/health
-```
-
-## Project Structure
-
-```
-backend/
-├── Cargo.toml          # Dependencies and project config
-├── .gitignore          # Git ignore rules
-├── README.md           # This file
-└── src/
-    └── main.rs         # Main application code
+docker-compose down -v
 ```
 
 ## Development
 
-- Port: 3000
-- Framework: Axum v0.7
-- Rust Edition: 2021
+For development, you can modify the docker-compose.yml file to mount the source code and use a development runner instead of the compiled binary.

@@ -16,8 +16,56 @@ backend :
 5. utils (Kotak Perkakas)
 
 
+
 frontend nya :
 
 1. npm run dev
 2. npm run build
 3. npm install
+
+database :
+
+1. docker-compose up -d
+2. docker-compose up -d --build    
+ 
+ Dokumentasi Perintah Database MongoDB
+
+  1. Menampilkan semua database
+
+   1 docker exec todo-mongodb mongosh -u admin -p password --authenticationDatabase admin --eval "db.adminCommand('listDatabases')"
+   - Perintah ini menampilkan semua database yang ada di MongoDB
+   - Output menunjukkan bahwa database todo_db sudah terbuat
+
+  2. Menampilkan semua collection di dalam database todo_db
+
+   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.getCollectionNames()"
+   - Perintah ini menampilkan semua collection di dalam database todo_db
+   - Output menunjukkan bahwa ada collection bernama todos
+
+  3. Menampilkan beberapa dokumen dari collection todos
+
+   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.todos.find().limit(5)"
+   - Perintah ini menampilkan maksimal 5 dokumen pertama dari collection todos
+   - Berguna untuk melihat struktur dan contoh data
+
+  4. Menghitung jumlah total dokumen di dalam collection todos
+
+   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.todos.countDocuments()"
+   - Perintah ini menghitung jumlah total dokumen dalam collection todos
+
+  Struktur Dokumen di Collection todos
+  Setiap dokumen di dalam collection todos memiliki struktur berikut:
+   - _id: ObjectId unik (dibuat otomatis oleh MongoDB)
+   - title: Judul todo (string)
+   - description: Deskripsi todo (string)
+   - completed: Status penyelesaian (boolean)
+   - createdAt: Timestamp pembuatan (ISODate)
+   - updatedAt: Timestamp update terakhir (ISODate)
+
+  Catatan Tambahan
+   - Semua perintah dijalankan di dalam container MongoDB menggunakan docker exec
+   - Username: admin
+   - Password: password
+   - Authentication database: admin
+   - Nama database: todo_db
+   - Nama collection: todos
