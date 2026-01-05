@@ -26,43 +26,59 @@
           </div>
           
           <form class="flex flex-col gap-4" @submit.prevent="handleLogin">
+            <!-- Error message display -->
+            <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
+              {{ errorMessage }}
+            </div>
+
             <div class="flex flex-col gap-2">
               <label class="text-[#111418] dark:text-slate-200 text-base font-medium leading-normal">Email Address</label>
-              <input 
+              <input
                 v-model="loginData.email"
-                class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-[#3e4c59] bg-white dark:bg-[#101922] focus:border-primary h-12 placeholder:text-[#617589] dark:placeholder:text-slate-500 p-[15px] text-base font-normal leading-normal transition-all" 
-                placeholder="name@example.com" 
-                type="email" 
+                class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-[#3e4c59] bg-white dark:bg-[#101922] focus:border-primary h-12 placeholder:text-[#617589] dark:placeholder:text-slate-500 p-[15px] text-base font-normal leading-normal transition-all"
+                placeholder="name@example.com"
+                type="email"
+                :disabled="loading"
               />
             </div>
-            
+
             <div class="flex flex-col gap-2">
               <div class="flex justify-between items-center">
                 <label class="text-[#111418] dark:text-slate-200 text-base font-medium leading-normal">Password</label>
                 <a class="text-primary text-sm font-normal leading-normal hover:underline" href="#">Forgot Password?</a>
               </div>
               <div class="relative flex w-full items-center">
-                <input 
+                <input
                   v-model="loginData.password"
                   :type="showPassword ? 'text' : 'password'"
-                  class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-[#3e4c59] bg-white dark:bg-[#101922] focus:border-primary h-12 placeholder:text-[#617589] dark:placeholder:text-slate-500 p-[15px] pr-12 text-base font-normal leading-normal transition-all" 
-                  placeholder="Enter your password" 
+                  class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-[#3e4c59] bg-white dark:bg-[#101922] focus:border-primary h-12 placeholder:text-[#617589] dark:placeholder:text-slate-500 p-[15px] pr-12 text-base font-normal leading-normal transition-all"
+                  placeholder="Enter your password"
+                  :disabled="loading"
                 />
-                <button 
-                  class="absolute right-0 top-0 h-full px-3 flex items-center justify-center text-[#617589] dark:text-slate-400 hover:text-primary transition-colors" 
+                <button
+                  class="absolute right-0 top-0 h-full px-3 flex items-center justify-center text-[#617589] dark:text-slate-400 hover:text-primary transition-colors"
                   type="button"
                   @click="togglePasswordVisibility"
+                  :disabled="loading"
                 >
                   <span class="material-symbols-outlined text-xl">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
                 </button>
               </div>
             </div>
-            
-            <button 
-              class="mt-2 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20" 
+
+            <button
+              class="mt-2 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
               type="submit"
+              :disabled="loading"
             >
-              <span class="truncate">Sign In</span>
+              <span v-if="loading" class="flex items-center">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Signing In...
+              </span>
+              <span v-else class="truncate">Sign In</span>
             </button>
           </form>
         </div>
@@ -94,6 +110,8 @@ export default {
     })
 
     const showPassword = ref(false)
+    const loading = ref(false)
+    const errorMessage = ref('')
 
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
@@ -103,23 +121,66 @@ export default {
       e.preventDefault()
       console.log('Login data:', loginData.value)
 
-      // In a real application, you would make an API call to authenticate the user
-      // For now, we'll simulate a successful login
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500))
+      // Reset error message
+      errorMessage.value = ''
+      loading.value = true
 
-        // On successful login, redirect to dashboard
-        router.push('/dashboard')
+      try {
+        // Make API call to login endpoint
+        const response = await fetch('http://localhost:3000/api/users/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: loginData.value.email,
+            password: loginData.value.password
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Login successful:', data)
+
+          // Store the token in localStorage
+          if (data.token) {
+            localStorage.setItem('authToken', data.token)
+          }
+
+          // On successful login, redirect to dashboard
+          router.push('/dashboard')
+        } else {
+          // Handle different error statuses
+          if (response.status === 401) {
+            // Unauthorized - invalid credentials
+            errorMessage.value = 'Invalid email or password. Please try again.'
+          } else if (response.status === 500) {
+            // Internal server error
+            errorMessage.value = 'Server error. Please try again later.'
+          } else {
+            // Other errors
+            try {
+              const errorData = await response.json()
+              errorMessage.value = errorData.message || `Login failed with status: ${response.status}`
+            } catch (e) {
+              // If response is not JSON, use generic message
+              errorMessage.value = `Login failed with status: ${response.status}`
+            }
+          }
+        }
       } catch (error) {
-        console.error('Login failed:', error)
-        // Handle login error (show message to user, etc.)
+        console.error('Network error during login:', error)
+        errorMessage.value = 'Network error. Please check your connection and try again.'
+      } finally {
+        loading.value = false
       }
     }
 
     return {
       loginData,
       showPassword,
+      errorMessage,
+      loading,
       togglePasswordVisibility,
       handleLogin
     }

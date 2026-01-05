@@ -2,6 +2,8 @@ use axum::{extract::State, response::Json, routing::get, Router};
 use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::cors::CorsLayer;
+use std::time::Duration;
 
 // Import modules
 mod handlers;
@@ -57,7 +59,20 @@ async fn main() {
         .route("/health", get(health_check))
         .nest("/api/users", user_routes::create_user_routes())
         .nest("/api/tasks", task_routes::create_task_routes())
-        .with_state(app_state);
+        .with_state(app_state)
+        // Add CORS layer to allow requests from frontend
+        .layer(
+            CorsLayer::new()
+                .allow_origin([
+                    "http://localhost:5173".parse().unwrap(),  // Vite default port
+                    "http://localhost:3000".parse().unwrap(),  // Backend port (for testing)
+                    "http://127.0.0.1:5173".parse().unwrap(),
+                    "http://127.0.0.1:3000".parse().unwrap(),
+                ])
+                .allow_methods(tower_http::cors::AllowMethods::any())
+                .allow_headers(tower_http::cors::AllowHeaders::any())
+                .max_age(Duration::from_secs(86400)) // 24 hours
+        );
 
     // 3. Define address
     // Ini adalah alamat di mana server akan berjalan.

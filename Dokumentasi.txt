@@ -8,6 +8,7 @@ backend :
 6. winget install -e --id GnuWin32.Make
 7. winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 8. rustup default stable-x86_64-pc-windows-msvc
+9. cargo test
 
 1. models (Cetak Biru Data)
 2. services (Otak & Logika Bisnis) ⭐ (Paling Penting)
@@ -44,14 +45,14 @@ database :
 
   3. Menampilkan beberapa dokumen dari collection todos
 
-   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.todos.find().limit(5)"
-   - Perintah ini menampilkan maksimal 5 dokumen pertama dari collection todos
+   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.Users.find().limit(5)"
+   - Perintah ini menampilkan maksimal 5 dokumen pertama dari collection Users
    - Berguna untuk melihat struktur dan contoh data
 
   4. Menghitung jumlah total dokumen di dalam collection todos
 
-   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.todos.countDocuments()"
-   - Perintah ini menghitung jumlah total dokumen dalam collection todos
+   1 docker exec todo-mongodb mongosh todo_db -u admin -p password --authenticationDatabase admin --eval "db.Users.countDocuments()"
+   - Perintah ini menghitung jumlah total dokumen dalam collection Users
 
   Struktur Dokumen di Collection todos
   Setiap dokumen di dalam collection todos memiliki struktur berikut:
