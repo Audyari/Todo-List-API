@@ -1,0 +1,223 @@
+### 1. Test User Registration
+
+# Registrasi pengguna baru (Kasus sukses)
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+# Registrasi dengan email yang sudah ada (Kasus konflik)
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### 2. Test User Login
+
+# Login dengan kredensial valid (Kasus sukses)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+# Login dengan password salah (Kasus tidak sah)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}
+
+###
+
+# Login dengan email yang tidak terdaftar (Kasus tidak sah)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "password123"
+}
+
+###
+
+# Mencoba mengakses endpoint login dengan metode salah
+GET http://localhost:3000/api/users/login
+
+###
+
+### 3. Test Create a To-Do Item
+
+# Buat item to-do baru (Kasus sukses - pastikan untuk mengganti token dengan token yang valid dari login)
+POST http://localhost:3000/api/tasks
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDU1MjQsImlhdCI6MTc2NzYwMDcyNH0.zkhlytnOh5mqqtQ0pcSob7GHnVYatUmOU9ptqrYAcNA
+
+{
+  "title": "Buy groceries",
+  "description": "Buy milk, eggs, and bread",
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Buat item to-do tanpa token (Kasus tidak sah)
+POST http://localhost:3000/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Buy groceries",
+  "description": "Buy milk, eggs, and bread",
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Buat item to-do dengan token tidak valid (Kasus tidak sah)
+POST http://localhost:3000/api/tasks
+Content-Type: application/json
+Authorization: Bearer invalid_token
+
+{
+  "title": "Buy groceries",
+  "description": "Buy milk, eggs, and bread",
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Buat item to-do dengan data tidak lengkap
+POST http://localhost:3000/api/tasks
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDU1MjQsImlhdCI6MTc2NzYwMDcyNH0.zkhlytnOh5mqqtQ0pcSob7GHnVYatUmOU9ptqrYAcNA
+
+{
+  "title": "Buy groceries"
+}
+
+###
+
+# Mencoba mengakses endpoint dengan metode salah
+GET http://localhost:3000/api/tasks
+
+###
+
+### 4. Test Update a To-Do Item
+
+# Update item to-do yang ada (Kasus sukses - pastikan untuk mengganti token dengan token yang valid dari login dan sesuaikan ID task)
+PUT http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
+
+{
+  "title": "Buy groceries updated",
+  "description": "Buy milk, eggs, bread, and cheese",
+  "completed": true,
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Update item to-do tanpa token (Kasus tidak sah)
+PUT http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+
+{
+  "title": "Buy groceries updated",
+  "description": "Buy milk, eggs, bread, and cheese",
+  "completed": true,
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Update item to-do dengan token tidak valid (Kasus tidak sah)
+PUT http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+Authorization: Bearer invalid_token
+
+{
+  "title": "Buy groceries updated",
+  "description": "Buy milk, eggs, bread, and cheese",
+  "completed": true,
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Update item to-do yang bukan milik pengguna (Kasus forbidden)
+PUT http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae9
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
+
+{
+  "title": "Buy groceries updated",
+  "description": "Buy milk, eggs, bread, and cheese",
+  "completed": true,
+  "userId": "695b6e6484f8eee6b8ad14ec"
+}
+
+###
+
+# Update item to-do dengan data tidak lengkap
+PUT http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
+
+{
+  "title": "Buy groceries updated"
+}
+
+###
+
+### 5. Test Delete a To-Do Item
+
+# Delete item to-do yang ada (Kasus sukses - pastikan untuk mengganti token dengan token yang valid dari login dan sesuaikan ID task)
+DELETE http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
+
+###
+
+# Delete item to-do tanpa token (Kasus tidak sah)
+DELETE http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+
+###
+
+# Delete item to-do dengan token tidak valid (Kasus tidak sah)
+DELETE http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae8
+Content-Type: application/json
+Authorization: Bearer invalid_token
+
+###
+
+# Delete item to-do yang bukan milik pengguna (Kasus forbidden)
+DELETE http://localhost:3000/api/tasks/695b80cc69cbe89f5e832ae9
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
+
+###
+
+# Delete item to-do yang tidak ada
+DELETE http://localhost:3000/api/tasks/695b80cc69cbe89f5e832aef
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2OTViNmU2NDg0ZjhlZWU2YjhhZDE0ZWMiLCJleHAiOjE3NjgyMDkxOTIsImlhdCI6MTc2NzYwNDM5Mn0.7CmC6vsFbGh33Y6v-_3uImMdVoJvvsjqdfjsTEY7uoM
