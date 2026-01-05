@@ -1,0 +1,63 @@
+### 1. Test User Registration
+
+# Registrasi pengguna baru (Kasus sukses)
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Test User3",
+  "email": "test3@example.com",
+  "password": "password123"
+}
+
+###
+
+# Registrasi dengan email yang sudah ada (Kasus konflik)
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### 2. Test User Login
+
+# Login dengan kredensial valid (Kasus sukses)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+# Login dengan password salah (Kasus tidak sah)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}
+
+###
+
+# Login dengan email yang tidak terdaftar (Kasus tidak sah)
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "password123"
+}
+
+###
+
+# Mencoba mengakses endpoint login dengan metode salah
+GET http://localhost:3000/api/users/login

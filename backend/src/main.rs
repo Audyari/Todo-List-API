@@ -10,7 +10,7 @@ mod routes;
 mod services;
 mod utils;
 
-use routes::{todo_routes, user_routes, task_routes};
+use routes::{user_routes, task_routes};
 
 use crate::utils::database::DatabaseConnection;
 
@@ -55,7 +55,6 @@ async fn main() {
     let app = Router::new()
         .route("/", get(hello_world))
         .route("/health", get(health_check))
-        .nest("/api/todos", todo_routes::create_todo_routes())
         .nest("/api/users", user_routes::create_user_routes())
         .nest("/api/tasks", task_routes::create_task_routes())
         .with_state(app_state);
@@ -67,15 +66,11 @@ async fn main() {
     println!("🚀 Server running on http://localhost:3000");
     println!("📝 Hello World endpoint: GET /");
     println!("❤️  Health check endpoint: GET /health");
-    println!("📝 Todo API endpoints:");
-    println!("   GET /api/todos - Get all todos");
-    println!("   POST /api/todos - Create a new todo");
-    println!("   GET /api/todos/:id - Get a specific todo");
-    println!("   PUT /api/todos/:id - Update a specific todo");
-    println!("   DELETE /api/todos/:id - Delete a specific todo");
     println!("👥 User API endpoints:");
     println!("   GET /api/users - Get all users");
     println!("   POST /api/users - Create a new user");
+    println!("   POST /api/users/register - Register a new user");
+    println!("   POST /api/users/login - Login a user");
     println!("   GET /api/users/:id - Get a specific user");
     println!("   PUT /api/users/:id - Update a specific user");
     println!("   DELETE /api/users/:id - Delete a specific user");

@@ -1,5 +1,6 @@
-use crate::models::user::{CreateUserRequest, UpdateUserRequest};
+use crate::models::user::{CreateUserRequest, UpdateUserRequest, RegisterUserRequest};
 use crate::services::UserService;
+use crate::utils::jwt;
 use crate::AppState;
 use axum::{
     extract::{Json, Path, State},
@@ -112,6 +113,62 @@ pub async fn delete_user(
             "message": "User deleted successfully"
         }))),
         Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+// Register a new user
+pub async fn register_user(
+    State(state): State<std::sync::Arc<AppState>>,
+    Json(payload): Json<RegisterUserRequest>,
+) -> Result<AxumJson<serde_json::Value>, StatusCode> {
+    let user_service = UserService::new(&state.db.database);
+
+    match user_service.register_user(payload).await {
+        Ok(user) => {
+            // Generate JWT token
+            let user_id = user.id.unwrap().to_hex();
+            match jwt::generate_token(user_id) {
+                Ok(token) => Ok(AxumJson(json!({
+                    "success": true,
+                    "token": token,
+                    "message": "User registered successfully"
+                }))),
+                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+            }
+        },
+        Err(e) => {
+            // Check if the error is due to duplicate email
+            if e.to_string().contains("already exists") {
+                Err(StatusCode::CONFLICT) // 409 Conflict
+            } else {
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
+    }
+}
+
+// Login user
+pub async fn login_user(
+    State(state): State<std::sync::Arc<AppState>>,
+    Json(payload): Json<crate::models::user::LoginRequest>,
+) -> Result<AxumJson<serde_json::Value>, StatusCode> {
+    let user_service = UserService::new(&state.db.database);
+
+    match user_service.authenticate_user(&payload.email, &payload.password).await {
+        Ok(Some(user)) => {
+            // Generate JWT token
+            let user_id = user.id.unwrap().to_hex();
+            match jwt::generate_token(user_id) {
+                Ok(token) => Ok(AxumJson(json!({
+                    "success": true,
+                    "token": token,
+                    "message": "User logged in successfully"
+                }))),
+                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+            }
+        },
+        Ok(None) => Err(StatusCode::UNAUTHORIZED), // Invalid credentials
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }

@@ -1,4 +1,5 @@
-use crate::models::user::{CreateUserRequest, UpdateUserRequest, User};
+use crate::models::user::{CreateUserRequest, UpdateUserRequest, User, RegisterUserRequest};
+use crate::utils::password;
 use chrono::Utc;
 use futures_util::stream::TryStreamExt;
 use mongodb::{bson::doc, bson::oid::ObjectId, Collection};
@@ -10,7 +11,7 @@ pub struct UserService {
 
 impl UserService {
     pub fn new(db: &mongodb::Database) -> Self {
-        let collection: Collection<User> = db.collection("users");
+        let collection: Collection<User> = db.collection("Users"); // Using "Users" as specified
         Self { collection }
     }
 
@@ -68,5 +69,60 @@ impl UserService {
     pub async fn delete_user(&self, id: ObjectId) -> Result<bool, mongodb::error::Error> {
         let result = self.collection.delete_one(doc! { "_id": id }, None).await?;
         Ok(result.deleted_count == 1)
+    }
+
+    pub async fn register_user(&self, user: RegisterUserRequest) -> Result<User, mongodb::error::Error> {
+        // Check if user with this email already exists
+        let existing_user = self.collection.find_one(doc! { "email": &user.email }, None).await?;
+        if existing_user.is_some() {
+            return Err(mongodb::error::Error::from(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "User with this email already exists",
+            )));
+        }
+
+        // Hash the password
+        let hashed_password = password::hash_password(&user.password)
+            .map_err(|_| mongodb::error::Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to hash password",
+            )))?;
+
+        let new_user = User {
+            id: Some(ObjectId::new()),
+            username: user.name, // Using name as username for registration
+            email: user.email,
+            password: hashed_password,
+            created_at: Some(Utc::now()),
+            updated_at: Some(Utc::now()),
+        };
+
+        self.collection.insert_one(new_user.clone(), None).await?;
+        Ok(new_user)
+    }
+
+    pub async fn find_user_by_email(&self, email: &str) -> Result<Option<User>, mongodb::error::Error> {
+        self.collection.find_one(doc! { "email": email }, None).await
+    }
+
+    pub async fn authenticate_user(&self, email: &str, password: &str) -> Result<Option<User>, mongodb::error::Error> {
+        // Find user by email
+        let user = self.find_user_by_email(email).await?;
+
+        if let Some(user) = user {
+            // Verify the password
+            match crate::utils::password::verify_password(password, &user.password) {
+                Ok(valid) => {
+                    if valid {
+                        Ok(Some(user))
+                    } else {
+                        Ok(None) // Password doesn't match
+                    }
+                }
+                Err(_) => Ok(None), // Error during password verification
+            }
+        } else {
+            Ok(None) // User not found
+        }
     }
 }
