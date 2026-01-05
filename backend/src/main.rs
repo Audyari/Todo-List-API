@@ -1,23 +1,19 @@
-use axum::{
-    extract::State,
-    routing::get,
-    Router,
-    response::Json,
-};
+use axum::{extract::State, response::Json, routing::get, Router};
 use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 // Import modules
-mod models;
 mod handlers;
+mod models;
 mod routes;
 mod services;
 mod utils;
 
 use routes::todo_routes;
 
-// State for our application
+// 1. Manajemen State Bersama (AppState + Arc)
+// Ini adalah memori bersama aplikasi.
 pub struct AppState {
     pub todos: std::sync::Mutex<Vec<models::todo::Todo>>,
 }
@@ -39,19 +35,22 @@ async fn health_check(State(_state): State<Arc<AppState>>) -> Json<serde_json::V
 
 #[tokio::main]
 async fn main() {
-    // Initialize application state
+    // 1. Manajemen State Bersama (AppState + Arc)
+    // Ini adalah memori bersama aplikasi.
     let app_state = Arc::new(AppState {
         todos: std::sync::Mutex::new(vec![]),
     });
 
-    // Create router with routes
+    // 2. Konfigurasi Router & Dependency Injection (Router + with_state)
+    // Ini adalah sistem saraf yang menghubungkan permintaan (request) ke logika (handler).
     let app = Router::new()
         .route("/", get(hello_world))
         .route("/health", get(health_check))
         .nest("/api/todos", todo_routes::create_todo_routes())
         .with_state(app_state);
 
-    // Define address
+    // 3. Define address
+    // Ini adalah alamat di mana server akan berjalan.
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     println!("🚀 Server running on http://localhost:3000");
@@ -64,7 +63,8 @@ async fn main() {
     println!("   PUT /api/todos/:id - Update a specific todo");
     println!("   DELETE /api/todos/:id - Delete a specific todo");
 
-    // Start server
+    // 4. Server Runtime (TcpListener + axum::serve)
+    // Ini adalah server yang akan menerima permintaan dan mengirimkan respons.
     let listener = match tokio::net::TcpListener::bind(addr).await {
         Ok(listener) => listener,
         Err(e) => {
