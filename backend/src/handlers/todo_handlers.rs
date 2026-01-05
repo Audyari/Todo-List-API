@@ -1,15 +1,17 @@
+use crate::models::todo::{CreateTodoRequest, Todo, UpdateTodoRequest};
+use crate::services::todo_service;
+use crate::AppState;
 use axum::{
-    extract::{Path, State, Json},
+    extract::{Json, Path, State},
     http::StatusCode,
     response::Json as AxumJson,
 };
 use serde_json::json;
-use crate::models::todo::{Todo, CreateTodoRequest, UpdateTodoRequest};
-use crate::AppState;
-use crate::services::todo_service;
 
 // Get all todos
-pub async fn get_todos(State(state): State<std::sync::Arc<AppState>>) -> AxumJson<serde_json::Value> {
+pub async fn get_todos(
+    State(state): State<std::sync::Arc<AppState>>,
+) -> AxumJson<serde_json::Value> {
     let todos = state.todos.lock().unwrap();
     AxumJson(json!({
         "success": true,
@@ -20,12 +22,13 @@ pub async fn get_todos(State(state): State<std::sync::Arc<AppState>>) -> AxumJso
 
 // Get a single todo by ID
 pub async fn get_todo_by_id(
+    // 2. Cara Axum meng   ambil data dari Request.
     Path(id): Path<i32>,
     State(state): State<std::sync::Arc<AppState>>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
     let todos = state.todos.lock().unwrap();
     let todo = todos.iter().find(|t| t.id == Some(id)).cloned();
-    
+
     match todo {
         Some(todo) => Ok(AxumJson(json!({
             "success": true,
@@ -35,9 +38,10 @@ pub async fn get_todo_by_id(
     }
 }
 
-// Create a new todo
+// fungsi membuat todo baru
 pub async fn create_todo(
     State(state): State<std::sync::Arc<AppState>>,
+    // 2. Cara Axum mengambil data dari Request.
     Json(payload): Json<CreateTodoRequest>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
     // Validate the request
@@ -45,6 +49,7 @@ pub async fn create_todo(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    // 1. Penguncian State Aman (state.todos.lock().unwrap())
     let mut todos = state.todos.lock().unwrap();
 
     let new_todo = Todo {
@@ -65,8 +70,9 @@ pub async fn create_todo(
     })))
 }
 
-// Update a todo
+// fungsi update todo
 pub async fn update_todo(
+    //2. Cara Axum mengambil data dari Request.
     Path(id): Path<i32>,
     State(state): State<std::sync::Arc<AppState>>,
     Json(payload): Json<UpdateTodoRequest>,
@@ -76,6 +82,7 @@ pub async fn update_todo(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    // 1. Penguncian State Aman (state.todos.lock().unwrap())
     let mut todos = state.todos.lock().unwrap();
     let todo_index = todos.iter().position(|t| t.id == Some(id));
 
@@ -109,16 +116,18 @@ pub async fn update_todo(
     }
 }
 
-// Delete a todo
+// fungsi delete todo
 pub async fn delete_todo(
+    // 2. Cara Axum mengambil data dari Request.
     Path(id): Path<i32>,
     State(state): State<std::sync::Arc<AppState>>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
+    // 1. Penguncian State Aman (state.todos.lock().unwrap())
     let mut todos = state.todos.lock().unwrap();
     let initial_len = todos.len();
-    
+
     todos.retain(|t| t.id != Some(id));
-    
+
     if todos.len() == initial_len {
         Err(StatusCode::NOT_FOUND)
     } else {

@@ -9,6 +9,12 @@ backend :
 7. winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 8. rustup default stable-x86_64-pc-windows-msvc
 
+1. models (Cetak Biru Data)
+2. services (Otak & Logika Bisnis) ⭐ (Paling Penting)
+3. handlers (Pelayan Restoran)
+4. routes (Peta Jalan / Menu)
+5. utils (Kotak Perkakas)
+
 
 frontend nya :
 
