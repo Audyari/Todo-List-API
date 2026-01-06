@@ -13,19 +13,21 @@ db.createUser({
   ]
 });
 
-// Create the todos collection with some initial data (optional)
-db.todos.insertMany([
+// Create the tasks collection with some initial data (optional)
+db.tasks.insertMany([
   {
-    title: 'Sample Todo 1',
-    description: 'This is a sample todo item',
+    title: 'Sample Task 1',
+    description: 'This is a sample task item',
     completed: false,
+    userId: ObjectId(),
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
-    title: 'Sample Todo 2',
-    description: 'Another sample todo item',
+    title: 'Sample Task 2',
+    description: 'Another sample task item',
     completed: true,
+    userId: ObjectId(),
     createdAt: new Date(),
     updatedAt: new Date()
   }
