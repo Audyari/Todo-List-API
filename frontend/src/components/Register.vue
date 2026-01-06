@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../services/api'
 
 const router = useRouter()
 
@@ -11,22 +12,31 @@ const formData = ref({
 })
 
 const showPassword = ref(false)
+const errorMessage = ref('')
 
 const handleSubmit = async (e) => {
   e.preventDefault()
   console.log('Registration data:', formData.value)
 
-  // In a real application, you would make an API call to register the user
-  // For now, we'll simulate a successful registration
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Make API call to register endpoint using the API service
+    const response = await api.userAPI.register({
+      name: formData.value.fullName,
+      email: formData.value.email,
+      password: formData.value.password
+    })
+
+    console.log('Registration successful:', response)
 
     // On successful registration, redirect to login
     router.push('/login')
   } catch (error) {
-    console.error('Registration failed:', error)
-    // Handle registration error (show message to user, etc.)
+    console.error('Registration error:', error)
+    if (error.message.includes('409') || error.message.toLowerCase().includes('conflict') || error.message.toLowerCase().includes('already exists')) {
+      errorMessage.value = 'Email sudah terdaftar. Silakan gunakan email lain.'
+    } else {
+      errorMessage.value = error.message || 'Pendaftaran gagal. Silakan coba lagi.'
+    }
   }
 }
 </script>
@@ -60,6 +70,11 @@ const handleSubmit = async (e) => {
         </div>
 
         <form @submit="handleSubmit" class="px-8 pb-8 space-y-5">
+          <!-- Error message display -->
+          <div v-if="errorMessage" class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
+            {{ errorMessage }}
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-900 dark:text-white mb-1.5" for="full-name">Full Name</label>
             <div class="relative">

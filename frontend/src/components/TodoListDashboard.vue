@@ -137,8 +137,24 @@
             </div>
           </div>
 
+          <!-- Error message display -->
+          <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
+            {{ errorMessage }}
+          </div>
+
+          <!-- Loading indicator -->
+          <div v-if="loading" class="flex items-center justify-center py-12">
+            <div class="flex flex-col items-center">
+              <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="mt-2 text-sm text-[#617589] dark:text-slate-400">Loading tasks...</p>
+            </div>
+          </div>
+
           <!-- Task List Container -->
-          <div class="flex flex-col bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-[#f0f2f4] dark:border-slate-800 overflow-hidden">
+          <div v-else class="flex flex-col bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-[#f0f2f4] dark:border-slate-800 overflow-hidden">
             <!-- Header Row (Desktop) -->
             <div class="hidden md:flex items-center bg-background-light dark:bg-slate-800/50 px-6 py-3 border-b border-[#f0f2f4] dark:border-slate-800">
               <div class="w-8 shrink-0"></div>
@@ -157,6 +173,7 @@
                 <div class="pt-1 md:pt-0">
                   <input
                     v-model="task.completed"
+                    @change="updateTaskStatus(task)"
                     class="size-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                     type="checkbox"
                   />
@@ -232,6 +249,7 @@
 <script>
 import CreateTodoList from './CreateTodoList.vue'
 import EditTodoList from './EditTodoList.vue'
+import api from '../services/api'
 
 export default {
   name: 'TodoListDashboard',
@@ -241,54 +259,65 @@ export default {
   },
   data() {
     return {
+      // State Management (Data Center)
       showCreateModal: false,
       showEditModal: false,
       selectedTask: null,
-      tasks: [
-        {
-          id: 1,
-          title: 'Review Q3 Financial Reports',
-          description: 'Analyze the spreadsheet for discrepancies in column D and prepare a summary for the board meeting.',
-          status: 'In Progress',
-          dueDate: new Date(2023, 9, 24),
-          completed: false
-        },
-        {
-          id: 2,
-          title: 'Update Website Hero Image',
-          description: 'Coordinate with the design team to get the new assets for the holiday campaign.',
-          status: 'Pending',
-          dueDate: new Date(),
-          completed: false
-        },
-        {
-          id: 3,
-          title: 'Client Meeting Preparation',
-          description: 'Gather requirements doc and print the new mockups.',
-          status: 'Completed',
-          dueDate: new Date(2023, 9, 20),
-          completed: true
-        },
-        {
-          id: 4,
-          title: 'Draft Newsletter Content',
-          description: 'Topic: Productivity hacks for remote teams. Includes 3 graphics.',
-          status: 'Idea',
-          dueDate: new Date(2023, 10, 1),
-          completed: false
-        },
-        {
-          id: 5,
-          title: 'Backup Server Database',
-          description: 'Perform weekly backup and verify integrity of the dump file.',
-          status: 'Routine',
-          dueDate: new Date(2023, 10, 5),
-          completed: false
-        }
-      ]
+      tasks: [], // Ini adalah "Single Source of Truth". Seluruh tampilan daftar tugas di HTML bergantung pada array ini. Jika tasks berubah, tampilan otomatis berubah.
+      loading: false, // Loading state
+      errorMessage: '' // Error message
     }
   },
+  async mounted() {
+    await this.loadTasks();
+  },
   methods: {
+    async loadTasks() {
+      this.loading = true;
+      this.errorMessage = '';
+
+      try {
+        // Fetch tasks from the backend
+        const response = await api.taskAPI.getTasks();
+        console.log('Tasks loaded:', response);
+
+        // Transform the response to match the expected format
+        // Check if response.data exists and is an array
+        if (response.data && Array.isArray(response.data)) {
+          this.tasks = response.data.map(task => {
+            // Handle different ID formats from MongoDB
+            const taskId = typeof task._id === 'object' && task._id.$oid ? task._id.$oid : task._id;
+
+            return {
+              _id: task._id, // Keep original format for internal use
+              id: taskId, // Use string ID for compatibility
+              title: task.title,
+              description: task.description || '',
+              status: task.completed ? 'Completed' : 'In Progress',
+              dueDate: task.createdAt ? new Date(task.createdAt) : new Date(),
+              completed: task.completed || false,
+              priority: task.priority || 'normal' // Add priority if available
+            };
+          });
+        } else {
+          console.error('Invalid response format:', response);
+          if (response.message) {
+            this.errorMessage = response.message;
+          }
+          this.tasks = []; // Set to empty array if response is invalid
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized') || error.message.toLowerCase().includes('invalid token')) {
+          this.errorMessage = 'Authentication failed. Please log in again.';
+        } else {
+          this.errorMessage = error.message || 'Failed to load tasks. Please try again.';
+        }
+        this.tasks = []; // Ensure tasks is an empty array on error
+      } finally {
+        this.loading = false;
+      }
+    },
     getStatusClass(status, variant) {
       const baseClasses = variant === 'desktop' ? 'hidden md:block w-32' : 'md:hidden px-2 py-0.5 rounded text-xs font-medium';
       const statusClasses = {
@@ -323,38 +352,98 @@ export default {
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear();
     },
-    addTask(taskData) {
-      const newTask = {
-        id: this.tasks.length + 1,
-        title: taskData.title,
-        description: taskData.description,
-        status: this.getStatusFromPriority(taskData.priority),
-        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : new Date(),
-        completed: false
-      };
-
-      this.tasks.push(newTask);
-      this.showCreateModal = false;
+    async addTask(taskData) {
+      try {
+        // The task is already created via the API in CreateTodoList component
+        // We just need to refresh the task list
+        await this.loadTasks();
+        this.showCreateModal = false;
+      } catch (error) {
+        console.error('Error adding task:', error);
+        if (error.message.includes('401')) {
+          this.errorMessage = 'Authentication failed. Please log in again.';
+        } else {
+          this.errorMessage = error.message || 'Failed to add task. Please try again.';
+        }
+      }
     },
     openEditModal(task) {
       this.selectedTask = { ...task }; // Create a copy to avoid direct mutation
       this.showEditModal = true;
     },
-    updateTask(updatedTask) {
-      const index = this.tasks.findIndex(t => t.id === updatedTask.id);
-      if (index !== -1) {
-        this.tasks[index] = { ...updatedTask };
+    async updateTask(updatedTask) {
+      try {
+        // The task is already updated via the API in EditTodoList component
+        // We just need to refresh the task list
+        await this.loadTasks();
+        this.showEditModal = false;
+        this.selectedTask = null;
+      } catch (error) {
+        console.error('Error updating task:', error);
+        if (error.message.includes('401')) {
+          this.errorMessage = 'Authentication failed. Please log in again.';
+        } else {
+          this.errorMessage = error.message || 'Failed to update task. Please try again.';
+        }
       }
+    },
+    async deleteTask(taskId) {
+      try {
+        // The task is already deleted via the API in EditTodoList component
+        // We just need to refresh the task list
+        await this.loadTasks();
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        if (error.message.includes('401')) {
+          this.errorMessage = 'Authentication failed. Please log in again.';
+        } else if (error.message.includes('404')) {
+          this.errorMessage = 'Task not found. It may have been deleted already.';
+        } else {
+          this.errorMessage = error.message || 'Failed to delete task. Please try again.';
+        }
+      }
+    },
+    async handleDeleteTask(taskId) {
+      await this.deleteTask(taskId);
       this.showEditModal = false;
       this.selectedTask = null;
     },
-    deleteTask(taskId) {
-      this.tasks = this.tasks.filter(task => task.id !== taskId);
-    },
-    handleDeleteTask(taskId) {
-      this.deleteTask(taskId);
-      this.showEditModal = false;
-      this.selectedTask = null;
+    async updateTaskStatus(task) {
+      try {
+        // Update the task status via API
+        const taskPayload = {
+          completed: task.completed
+        };
+
+        // Use the MongoDB ObjectId - handle different formats
+        let taskId = task._id;
+        if (typeof task._id === 'object' && task._id.$oid) {
+          taskId = task._id.$oid;
+        } else if (!taskId) {
+          taskId = task.id;
+        }
+
+        // Call updateTask with only the completed status, without userId
+        // The backend should handle authorization via the JWT token
+        const response = await api.taskAPI.updateTask(taskId, taskPayload);
+        console.log('Task status updated:', response);
+
+        // Refresh the entire task list to ensure consistency
+        await this.loadTasks();
+      } catch (error) {
+        console.error('Error updating task status:', error);
+        // Revert the checkbox state if the API call fails
+        task.completed = !task.completed;
+        if (error.message.includes('401')) {
+          this.errorMessage = 'Authentication failed. Please log in again.';
+        } else if (error.message.includes('400')) {
+          this.errorMessage = 'Invalid request. Please try again.';
+        } else if (error.message.includes('404')) {
+          this.errorMessage = 'Task not found. It may have been deleted.';
+        } else {
+          this.errorMessage = error.message || 'Failed to update task status. Please try again.';
+        }
+      }
     },
     getStatusFromPriority(priority) {
       const statusMap = {
@@ -406,6 +495,7 @@ export default {
   word-wrap: normal;
   direction: ltr;
   -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 </style>

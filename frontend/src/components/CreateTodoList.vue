@@ -79,19 +79,31 @@
         </div>
       </div>
       
+      <!-- Error message display -->
+      <div v-if="errorMessage" class="px-6 pt-2 pb-1 text-red-500 text-sm">
+        {{ errorMessage }}
+      </div>
+
       <!-- Footer -->
       <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-[#141f2a]/50 border-t border-slate-100 dark:border-slate-700">
-        <button 
+        <button
           @click="closeModal"
           class="flex w-full sm:w-auto min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-transparent hover:bg-slate-200 dark:hover:bg-slate-700 border border-transparent text-slate-600 dark:text-slate-300 text-sm font-bold leading-normal tracking-[0.015em] transition-colors">
           <span class="truncate">Cancel</span>
         </button>
-        <button 
+        <button
           @click="saveTask"
-          :disabled="!taskData.title"
-          :class="{'opacity-50 cursor-not-allowed': !taskData.title}"
+          :disabled="!taskData.title || loading"
+          :class="{'opacity-50 cursor-not-allowed': !taskData.title || loading}"
           class="flex w-full sm:w-auto min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary hover:bg-blue-600 text-white shadow-sm text-sm font-bold leading-normal tracking-[0.015em] transition-colors">
-          <span class="truncate">Save Task</span>
+          <span v-if="loading" class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Saving...
+          </span>
+          <span v-else class="truncate">Save Task</span>
         </button>
       </div>
     </div>
@@ -100,47 +112,89 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import api from '../services/api'
 
 export default {
   name: 'CreateTodoList',
   emits: ['close', 'save'],
   setup(props, { emit }) {
     const titleInput = ref(null)
-    
+    const loading = ref(false)
+    const errorMessage = ref('')
+
     const taskData = ref({
       title: '',
       dueDate: '',
       priority: 'normal',
       description: ''
     })
-    
+
     const closeModal = () => {
       emit('close')
     }
-    
-    const saveTask = () => {
-      if (taskData.value.title.trim()) {
-        emit('save', { ...taskData.value })
-        // Reset form after saving
-        taskData.value = {
-          title: '',
-          dueDate: '',
-          priority: 'normal',
-          description: ''
+
+    const saveTask = async () => {
+      if (taskData.value.title.trim() && !loading.value) {
+        loading.value = true
+        errorMessage.value = ''
+
+        try {
+          // Prepare task data for API request
+          const taskPayload = {
+            title: taskData.value.title,
+            description: taskData.value.description || null,
+          }
+
+          // Make API call to create task
+          const response = await api.taskAPI.createTask(taskPayload)
+          console.log('Task created successfully:', response)
+
+          // Emit the saved task data
+          emit('save', {
+            ...response.data, // Use the response from the backend
+            title: taskData.value.title,
+            description: taskData.value.description,
+            dueDate: taskData.value.dueDate,
+            priority: taskData.value.priority
+          })
+
+          // Reset form after saving
+          taskData.value = {
+            title: '',
+            dueDate: '',
+            priority: 'normal',
+            description: ''
+          }
+
+          // Close the modal after successful save
+          closeModal()
+        } catch (error) {
+          console.error('Error creating task:', error)
+          if (error.message.includes('401')) {
+            errorMessage.value = 'Authentication failed. Please log in again.'
+          } else if (error.message.includes('400')) {
+            errorMessage.value = 'Invalid task data. Please check your input.'
+          } else {
+            errorMessage.value = error.message || 'Failed to create task. Please try again.'
+          }
+        } finally {
+          loading.value = false
         }
       }
     }
-    
+
     onMounted(() => {
       // Focus the title input when component is mounted
       if (titleInput.value) {
         titleInput.value.focus()
       }
     })
-    
+
     return {
       taskData,
       titleInput,
+      loading,
+      errorMessage,
       closeModal,
       saveTask
     }

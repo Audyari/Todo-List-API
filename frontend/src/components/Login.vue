@@ -98,6 +98,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../services/api'
 
 export default {
   name: 'Login',
@@ -126,51 +127,37 @@ export default {
       loading.value = true
 
       try {
-        // Make API call to login endpoint
-        const response = await fetch('http://localhost:3000/api/users/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: loginData.value.email,
-            password: loginData.value.password
-          })
+        // Make API call to login endpoint using the API service
+        const response = await api.userAPI.login({
+          email: loginData.value.email,
+          password: loginData.value.password
         })
 
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Login successful:', data)
+        console.log('Login successful:', response)
 
-          // Store the token in localStorage
-          if (data.token) {
-            localStorage.setItem('authToken', data.token)
-          }
-
-          // On successful login, redirect to dashboard
-          router.push('/dashboard')
-        } else {
-          // Handle different error statuses
-          if (response.status === 401) {
-            // Unauthorized - invalid credentials
-            errorMessage.value = 'Invalid email or password. Please try again.'
-          } else if (response.status === 500) {
-            // Internal server error
-            errorMessage.value = 'Server error. Please try again later.'
-          } else {
-            // Other errors
-            try {
-              const errorData = await response.json()
-              errorMessage.value = errorData.message || `Login failed with status: ${response.status}`
-            } catch (e) {
-              // If response is not JSON, use generic message
-              errorMessage.value = `Login failed with status: ${response.status}`
-            }
-          }
+        // Store the token in localStorage
+        if (response.token) {
+          localStorage.setItem('authToken', response.token)
         }
+
+        // On successful login, redirect to dashboard
+        router.push('/dashboard')
       } catch (error) {
-        console.error('Network error during login:', error)
-        errorMessage.value = 'Network error. Please check your connection and try again.'
+        console.error('Login error:', error)
+        // Handle different error statuses
+        if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized') || error.message.toLowerCase().includes('invalid credentials')) {
+          // Unauthorized - invalid credentials
+          errorMessage.value = 'Email atau password salah. Silakan coba lagi.'
+        } else if (error.message.includes('500') || error.message.toLowerCase().includes('server error') || error.message.toLowerCase().includes('internal server error')) {
+          // Internal server error
+          errorMessage.value = 'Kesalahan server. Silakan coba lagi nanti.'
+        } else if (error.message.includes('400') || error.message.toLowerCase().includes('bad request')) {
+          // Bad request - possibly invalid input
+          errorMessage.value = 'Input tidak valid. Silakan periksa email dan password.'
+        } else {
+          // Other errors
+          errorMessage.value = error.message || 'Login gagal. Silakan coba lagi.'
+        }
       } finally {
         loading.value = false
       }
