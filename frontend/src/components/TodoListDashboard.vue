@@ -286,7 +286,14 @@ export default {
         if (response.data && Array.isArray(response.data)) {
           this.tasks = response.data.map(task => {
             // Handle different ID formats from MongoDB
-            const taskId = typeof task._id === 'object' && task._id.$oid ? task._id.$oid : task._id;
+            let taskId = task.id;
+            if (typeof task.id === 'object' && task.id.$oid) {
+              taskId = task.id.$oid;
+            } else if (!taskId && typeof task._id === 'object' && task._id.$oid) {
+              taskId = task._id.$oid;
+            } else if (!taskId) {
+              taskId = task._id;
+            }
 
             return {
               _id: task._id, // Keep original format for internal use
@@ -389,8 +396,16 @@ export default {
     },
     async deleteTask(taskId) {
       try {
-        // The task is already deleted via the API in EditTodoList component
-        // We just need to refresh the task list
+        // Handle different ID formats
+        let actualTaskId = taskId;
+        if (typeof taskId === 'object' && taskId.$oid) {
+          actualTaskId = taskId.$oid;
+        }
+
+        // Call the API to delete the task
+        await api.taskAPI.deleteTask(actualTaskId);
+
+        // Refresh the task list after successful deletion
         await this.loadTasks();
       } catch (error) {
         console.error('Error deleting task:', error);
@@ -416,11 +431,13 @@ export default {
         };
 
         // Use the MongoDB ObjectId - handle different formats
-        let taskId = task._id;
-        if (typeof task._id === 'object' && task._id.$oid) {
+        let taskId = task.id;
+        if (typeof task.id === 'object' && task.id.$oid) {
+          taskId = task.id.$oid;
+        } else if (!taskId && typeof task._id === 'object' && task._id.$oid) {
           taskId = task._id.$oid;
         } else if (!taskId) {
-          taskId = task.id;
+          taskId = task._id;
         }
 
         // Call updateTask with only the completed status, without userId

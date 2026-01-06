@@ -1,4 +1,4 @@
-use crate::models::task::{CreateTaskRequest, UpdateTaskRequest, Task};
+use crate::models::task::{CreateTaskRequest, Task, UpdateTaskRequest};
 use chrono::Utc;
 use futures_util::stream::TryStreamExt;
 use mongodb::{bson::doc, bson::oid::ObjectId, Collection};
@@ -25,7 +25,10 @@ impl TaskService {
         Ok(tasks)
     }
 
-    pub async fn get_task_by_id(&self, id: ObjectId) -> Result<Option<Task>, mongodb::error::Error> {
+    pub async fn get_task_by_id(
+        &self,
+        id: ObjectId,
+    ) -> Result<Option<Task>, mongodb::error::Error> {
         self.collection.find_one(doc! { "_id": id }, None).await
     }
 
@@ -36,7 +39,7 @@ impl TaskService {
     ) -> Result<Task, mongodb::error::Error> {
         let new_task = Task {
             id: Some(ObjectId::new()),
-            title: task.title,
+            title: Some(task.title),
             description: task.description,
             completed: false, // Default to false
             user_id,
@@ -55,11 +58,19 @@ impl TaskService {
         user_id: Option<ObjectId>,
     ) -> Result<Option<Task>, mongodb::error::Error> {
         let mut set_doc = doc! {
-            "title": task.title,
-            "description": task.description,
-            "completed": task.completed,
             "updated_at": Utc::now()
         };
+
+        // Add optional fields
+        if let Some(title) = task.title {
+            set_doc.insert("title", title);
+        }
+        if let Some(description) = task.description {
+            set_doc.insert("description", description);
+        }
+        if let Some(completed) = task.completed {
+            set_doc.insert("completed", completed);
+        }
 
         // Add user_id to update if provided
         if let Some(user_id_val) = user_id {

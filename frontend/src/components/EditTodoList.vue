@@ -164,8 +164,15 @@ export default {
             completed: taskData.value.completed
           }
 
-          // Use the MongoDB ObjectId from the original task
-          const taskId = props.task._id || props.task.id;
+          // Use the MongoDB ObjectId from the original task - handle different formats
+          let taskId = props.task.id;
+          if (typeof taskId === 'object' && taskId.$oid) {
+            taskId = taskId.$oid;
+          } else if (!taskId && typeof props.task._id === 'object' && props.task._id.$oid) {
+            taskId = props.task._id.$oid;
+          } else if (!taskId) {
+            taskId = props.task._id;
+          }
 
           console.log('Updating task with ID:', taskId, 'and payload:', taskPayload);
 
@@ -205,8 +212,15 @@ export default {
         errorMessage.value = ''
 
         try {
-          // Use the MongoDB ObjectId from the original task
-          const taskId = props.task._id || props.task.id;
+          // Use the MongoDB ObjectId from the original task - handle different formats
+          let taskId = props.task.id;
+          if (typeof taskId === 'object' && taskId.$oid) {
+            taskId = taskId.$oid;
+          } else if (!taskId && typeof props.task._id === 'object' && props.task._id.$oid) {
+            taskId = props.task._id.$oid;
+          } else if (!taskId) {
+            taskId = props.task._id;
+          }
 
           // Make API call to delete task
           const response = await api.taskAPI.deleteTask(taskId)

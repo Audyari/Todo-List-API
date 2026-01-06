@@ -16,15 +16,37 @@ pub async fn get_tasks(
     let task_service = TaskService::new(&state.db.database);
 
     match task_service.get_all_tasks().await {
-        Ok(tasks) => AxumJson(json!({
-            "success": true,
-            "data": &tasks,
-            "count": tasks.len()
-        })),
-        Err(_) => AxumJson(json!({
-            "success": false,
-            "message": "Failed to retrieve tasks"
-        }))
+        Ok(tasks) => {
+            // Convert tasks to a format that handles optional fields properly
+            let tasks_json: Vec<serde_json::Value> = tasks
+                .iter()
+                .map(|task| {
+                    json!({
+                        "id": task.id,
+                        "title": task.title,
+                        "description": task.description,
+                        "completed": task.completed,
+                        "userId": task.user_id,
+                        "createdAt": task.created_at,
+                        "updatedAt": task.updated_at
+                    })
+                })
+                .collect();
+
+            AxumJson(json!({
+                "success": true,
+                "data": tasks_json,
+                "count": tasks.len()
+            }))
+        }
+        Err(e) => {
+            eprintln!("Error getting tasks: {}", e);
+            AxumJson(json!({
+                "success": false,
+                "message": "Failed to retrieve tasks",
+                "error": e.to_string()
+            }))
+        }
     }
 }
 
@@ -42,10 +64,21 @@ pub async fn get_task_by_id(
     let task_service = TaskService::new(&state.db.database);
 
     match task_service.get_task_by_id(id).await {
-        Ok(Some(task)) => Ok(AxumJson(json!({
-            "success": true,
-            "data": task
-        }))),
+        Ok(Some(task)) => {
+            let task_json = json!({
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "completed": task.completed,
+                "userId": task.user_id,
+                "createdAt": task.created_at,
+                "updatedAt": task.updated_at
+            });
+            Ok(AxumJson(json!({
+                "success": true,
+                "data": task_json
+            })))
+        }
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
@@ -65,11 +98,22 @@ pub async fn create_task(
     let task_service = TaskService::new(&state.db.database);
 
     match task_service.create_task(payload, user_id).await {
-        Ok(new_task) => Ok(AxumJson(json!({
-            "success": true,
-            "data": new_task,
-            "message": "Task created successfully"
-        }))),
+        Ok(new_task) => {
+            let task_json = json!({
+                "id": new_task.id,
+                "title": new_task.title,
+                "description": new_task.description,
+                "completed": new_task.completed,
+                "userId": new_task.user_id,
+                "createdAt": new_task.created_at,
+                "updatedAt": new_task.updated_at
+            });
+            Ok(AxumJson(json!({
+                "success": true,
+                "data": task_json,
+                "message": "Task created successfully"
+            })))
+        }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
@@ -99,11 +143,22 @@ pub async fn update_task(
     let task_service = TaskService::new(&state.db.database);
 
     match task_service.update_task(id, payload, user_id).await {
-        Ok(Some(updated_task)) => Ok(AxumJson(json!({
-            "success": true,
-            "data": updated_task,
-            "message": "Task updated successfully"
-        }))),
+        Ok(Some(updated_task)) => {
+            let task_json = json!({
+                "id": updated_task.id,
+                "title": updated_task.title,
+                "description": updated_task.description,
+                "completed": updated_task.completed,
+                "userId": updated_task.user_id,
+                "createdAt": updated_task.created_at,
+                "updatedAt": updated_task.updated_at
+            });
+            Ok(AxumJson(json!({
+                "success": true,
+                "data": task_json,
+                "message": "Task updated successfully"
+            })))
+        }
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
