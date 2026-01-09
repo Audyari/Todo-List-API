@@ -1,5 +1,6 @@
 use crate::models::task::{CreateTaskRequest, UpdateTaskRequest};
 use crate::services::TaskService;
+use crate::utils::auth::AuthUser;
 use crate::AppState;
 use axum::{
     extract::{Json, Path, State},
@@ -9,13 +10,27 @@ use axum::{
 use bson::oid::ObjectId;
 use serde_json::json;
 
-// Get all tasks
+// Get all tasks (for authenticated user)
+#[axum::debug_handler]
 pub async fn get_tasks(
     State(state): State<std::sync::Arc<AppState>>,
+    AuthUser { user_id }: AuthUser,
 ) -> AxumJson<serde_json::Value> {
     let task_service = TaskService::new(&state.db.database);
 
-    match task_service.get_all_tasks().await {
+    // Convert user_id string to ObjectId for filtering
+    let user_object_id = match ObjectId::parse_str(&user_id) {
+        Ok(oid) => oid,
+        Err(_) => {
+            return AxumJson(json!({
+                "success": false,
+                "message": "Invalid user ID format",
+                "error": "Invalid user ID"
+            }));
+        }
+    };
+
+    match task_service.get_tasks_by_user(user_object_id).await {
         Ok(tasks) => {
             // Convert tasks to a format that handles optional fields properly
             let tasks_json: Vec<serde_json::Value> = tasks
@@ -51,9 +66,11 @@ pub async fn get_tasks(
 }
 
 // Get a single task by ID
+#[axum::debug_handler]
 pub async fn get_task_by_id(
-    Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
+    AuthUser { user_id }: AuthUser,
+    Path(id_str): Path<String>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
     // Convert string ID to ObjectId
     let id = match ObjectId::parse_str(&id_str) {
@@ -61,10 +78,21 @@ pub async fn get_task_by_id(
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
+    // Convert user_id string to ObjectId for comparison
+    let user_object_id = match ObjectId::parse_str(&user_id) {
+        Ok(oid) => oid,
+        Err(_) => return Err(StatusCode::BAD_REQUEST),
+    };
+
     let task_service = TaskService::new(&state.db.database);
 
+    // Check if the task exists and belongs to the user
     match task_service.get_task_by_id(id).await {
         Ok(Some(task)) => {
+            if task.user_id != user_object_id {
+                return Err(StatusCode::FORBIDDEN);
+            }
+
             let task_json = json!({
                 "id": task.id,
                 "title": task.title,
@@ -85,19 +113,31 @@ pub async fn get_task_by_id(
 }
 
 // Create a new task
+#[axum::debug_handler]
 pub async fn create_task(
     State(state): State<std::sync::Arc<AppState>>,
+    AuthUser { user_id }: AuthUser,
     Json(payload): Json<CreateTaskRequest>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
-    // Convert string user ID to ObjectId
-    let user_id = match ObjectId::parse_str(&payload.user_id) {
+    // Convert user_id string from token to ObjectId
+    let user_object_id = match ObjectId::parse_str(&user_id) {
         Ok(oid) => oid,
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
     let task_service = TaskService::new(&state.db.database);
 
-    match task_service.create_task(payload, user_id).await {
+    // Create task with authenticated user's ID, ignoring any user_id in the payload
+    let create_request = CreateTaskRequest {
+        title: payload.title,
+        description: payload.description,
+        user_id: user_id, // Use the authenticated user's ID
+    };
+
+    match task_service
+        .create_task(create_request, user_object_id)
+        .await
+    {
         Ok(new_task) => {
             let task_json = json!({
                 "id": new_task.id,
@@ -119,9 +159,11 @@ pub async fn create_task(
 }
 
 // Update a task
+#[axum::debug_handler]
 pub async fn update_task(
-    Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
+    AuthUser { user_id }: AuthUser,
+    Path(id_str): Path<String>,
     Json(payload): Json<UpdateTaskRequest>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
     // Convert string ID to ObjectId
@@ -130,19 +172,27 @@ pub async fn update_task(
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
-    // Convert string user ID to ObjectId if provided
-    let user_id = if let Some(user_id_str) = &payload.user_id {
-        match ObjectId::parse_str(user_id_str) {
-            Ok(oid) => Some(oid),
-            Err(_) => return Err(StatusCode::BAD_REQUEST),
-        }
-    } else {
-        None
+    // Convert user_id string to ObjectId for comparison
+    let user_object_id = match ObjectId::parse_str(&user_id) {
+        Ok(oid) => oid,
+        Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
     let task_service = TaskService::new(&state.db.database);
 
-    match task_service.update_task(id, payload, user_id).await {
+    // First, check if the task exists and belongs to the user
+    if let Some(existing_task) = task_service.get_task_by_id(id).await.ok().flatten() {
+        if existing_task.user_id != user_object_id {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    } else {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    match task_service
+        .update_task(id, payload, Some(user_object_id))
+        .await
+    {
         Ok(Some(updated_task)) => {
             let task_json = json!({
                 "id": updated_task.id,
@@ -165,9 +215,11 @@ pub async fn update_task(
 }
 
 // Delete a task
+#[axum::debug_handler]
 pub async fn delete_task(
-    Path(id_str): Path<String>,
     State(state): State<std::sync::Arc<AppState>>,
+    AuthUser { user_id }: AuthUser,
+    Path(id_str): Path<String>,
 ) -> Result<AxumJson<serde_json::Value>, StatusCode> {
     // Convert string ID to ObjectId
     let id = match ObjectId::parse_str(&id_str) {
@@ -175,7 +227,22 @@ pub async fn delete_task(
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
+    // Convert user_id string to ObjectId for comparison
+    let user_object_id = match ObjectId::parse_str(&user_id) {
+        Ok(oid) => oid,
+        Err(_) => return Err(StatusCode::BAD_REQUEST),
+    };
+
     let task_service = TaskService::new(&state.db.database);
+
+    // First, check if the task exists and belongs to the user
+    if let Some(existing_task) = task_service.get_task_by_id(id).await.ok().flatten() {
+        if existing_task.user_id != user_object_id {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    } else {
+        return Err(StatusCode::NOT_FOUND);
+    }
 
     match task_service.delete_task(id).await {
         Ok(true) => Ok(AxumJson(json!({
